@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SATRIA 360 - Sistem Monitoring K3 & Lingkungan Hidup</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ehs: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Leaflet.js CSS & JS for Interactive Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .fit-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .fit-table th, .fit-table td { word-break: break-word; }
+        @media (max-width: 767px) {
+            .fit-table th, .fit-table td { white-space: normal; padding: 0.5rem 0.625rem; }
+        }
+        @media (min-width: 768px) {
+            .fit-table { table-layout: auto; }
+            .fit-table th, .fit-table td { white-space: normal; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 h-full flex flex-col overflow-hidden">
+
+    <!-- Enterprise Login Overlay Screen -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-ehs-950">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200/20 transform transition-all">
+            <div class="bg-ehs-900 text-white p-6 text-center relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl font-extrabold pointer-events-none">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-amber-400 to-emerald-500 rounded-xl text-slate-900 font-extrabold text-2xl shadow-lg mb-3">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h2 class="text-xl font-extrabold tracking-wider">SATRIA 360</h2>
+                <p class="text-xs text-slate-300 mt-1 font-medium">Sistem Monitoring K3 & Lingkungan Hidup Enterprise</p>
+            </div>
+            <form onsubmit="handleLoginSubmit(event)" class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-id-badge text-ehs-600 mr-1"></i> ID Pengguna / Email Korporat</label>
+                    <input type="text" id="loginUsername" required value="admin.ehs@satria360.co.id" class="w-full border border-slate-300 rounded-lg p-3 font-medium bg-slate-50 focus:ring-2 focus:ring-ehs-600 focus:outline-none" placeholder="Masukkan email atau NIK...">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-lock text-ehs-600 mr-1"></i> Kata Sandi (*Password*)</label>
+                    <input type="password" id="loginPassword" required value="password123" class="w-full border border-slate-300 rounded-lg p-3 font-medium bg-slate-50 focus:ring-2 focus:ring-ehs-600 focus:outline-none" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-industry text-ehs-600 mr-1"></i> Unit / Entitas Penugasan</label>
+                    <select id="loginUnitSelect" class="w-full border border-slate-300 rounded-lg p-3 font-medium bg-slate-50 focus:ring-2 focus:ring-ehs-600 focus:outline-none cursor-pointer">
+                        <option value="ALL">Pusat / Enterprise HO (Semua Unit)</option>
+                        <option value="PKS MI - Pulo Jantan">PKS MI - Pulo Jantan</option>
+                        <option value="Kebun MI - Aek Kuo">Kebun MI - Aek Kuo</option>
+                        <option value="Kebun BM">Kebun BM</option>
+                        <option value="Kebun HS">Kebun HS</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-ehs-600 hover:bg-ehs-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-200 cursor-pointer text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Dashboard
+                    </button>
+                </div>
+                <div class="text-center pt-2 text-[11px] text-slate-500">
+                    Sistem Keamanan Terpadu SATRIA 360 © 2026. Hak Cipta Dilindungi.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Workspace Container (Fully Native Responsive Layout) -->
+    <div id="deviceViewport" class="w-full h-full flex flex-col relative bg-slate-100">
+        
+        <!-- Top Navbar Header -->
+        <header class="bg-ehs-900 text-white shadow-md z-30 flex items-center justify-between px-3 sm:px-4 py-2.5 shrink-0 border-b border-ehs-800">
+            <div class="flex items-center space-x-2">
+                <div class="bg-gradient-to-br from-amber-400 to-emerald-500 w-8 h-8 rounded-lg flex items-center justify-center text-slate-900 font-extrabold text-sm shadow">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xs sm:text-sm tracking-wider flex items-center gap-1.5 text-white">
+                        SATRIA 360
+                        <span class="bg-amber-500/30 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-400/40 font-semibold uppercase hidden sm:inline-block">EHS SUMUT</span>
+                    </h1>
+                    <p class="text-[9px] text-slate-300 font-medium truncate max-w-[160px] sm:max-w-none">Sistem Monitoring K3L</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-1.5">
+                <!-- Unit / Entity Selector -->
+                <div class="flex items-center space-x-1 bg-ehs-800 px-2 py-1 rounded-lg border border-ehs-700">
+                    <i class="fa-solid fa-industry text-ehs-400 text-[10px]"></i>
+                    <select id="globalUnitFilter" class="bg-transparent text-white text-[10px] font-semibold focus:outline-none cursor-pointer max-w-[90px] md:max-w-[150px] truncate">
+                        <option value="ALL" class="bg-ehs-900">Semua Unit</option>
+                        <option value="PKS MI - Pulo Jantan" class="bg-ehs-900">PKS MI</option>
+                        <option value="Kebun MI - Aek Kuo" class="bg-ehs-900">Kebun MI</option>
+                        <option value="Kebun BM" class="bg-ehs-900">Kebun BM</option>
+                        <option value="Kebun HS" class="bg-ehs-900">Kebun HS</option>
+                    </select>
+                </div>
+
+                <!-- Quick Action buttons -->
+                <button onclick="exportToExcel()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer" title="Export Excel">
+                    <i class="fa-solid fa-file-excel"></i>
+                </button>
+                <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-semibold shadow transition flex items-center gap-1 cursor-pointer" title="Keluar / Logout">
+                    <i class="fa-solid fa-right-from-bracket text-[10px]"></i> <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Body -->
+        <div class="flex flex-1 overflow-hidden relative bg-slate-100">
+            
+            <!-- Mobile Sidebar Backdrop -->
+            <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden"></div>
+
+            <!-- Sidebar Navigation Drawer (Desktop Fixed / Mobile Drawer) -->
+            <aside id="appSidebar" class="absolute md:relative inset-y-0 left-0 w-60 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 select-none z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-200 shadow-2xl md:shadow-none">
+                <div class="p-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 flex justify-between items-center">
+                    <span>Menu SATRIA 360</span>
+                    <button onclick="toggleMobileSidebar()" class="text-slate-400 hover:text-white text-sm p-1 md:hidden"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <nav class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1 text-xs">
+                    <button onclick="switchTab('overview')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left bg-ehs-800 text-white shadow" data-tab="overview">
+                        <i class="fa-solid fa-chart-pie w-4 text-center text-emerald-400"></i>
+                        <span class="truncate">Dashboard</span>
+                    </button>
+                    <div class="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Modul Utama K3L</div>
+                    <button onclick="switchTab('k3')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="k3">
+                        <i class="fa-solid fa-helmet-safety w-4 text-center text-amber-400"></i>
+                        <span class="truncate">K3</span>
+                    </button>
+                    <button onclick="switchTab('lingkungan')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="lingkungan">
+                        <i class="fa-solid fa-leaf w-4 text-center text-emerald-400"></i>
+                        <span class="truncate">Lingkungan</span>
+                    </button>
+                    <button onclick="switchTab('kebakaran')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="kebakaran">
+                        <i class="fa-solid fa-fire-flame-curved w-4 text-center text-red-400"></i>
+                        <span class="truncate">Kebakaran</span>
+                    </button>
+                    <div class="pt-2 pb-1 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kepatuhan & Operasional</div>
+                    <button onclick="switchTab('perizinan')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="perizinan">
+                        <i class="fa-solid fa-file-contract w-4 text-center text-blue-400"></i>
+                        <span class="truncate">Perizinan & Legalitas</span>
+                    </button>
+                    <button onclick="switchTab('pelatihan')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="pelatihan">
+                        <i class="fa-solid fa-graduation-cap w-4 text-center text-cyan-400"></i>
+                        <span class="truncate">Pelatihan & Sertifikat</span>
+                    </button>
+                    <button onclick="switchTab('sertifikasi')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="sertifikasi">
+                        <i class="fa-solid fa-award w-4 text-center text-purple-400"></i>
+                        <span class="truncate">Sertifikasi</span>
+                    </button>
+                    <button onclick="switchTab('schedule')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="schedule">
+                        <i class="fa-solid fa-calendar-days w-4 text-center text-indigo-400"></i>
+                        <span class="truncate">Agenda</span>
+                    </button>
+                    <button onclick="switchTab('anggaran')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="anggaran">
+                        <i class="fa-solid fa-wallet w-4 text-center text-emerald-300"></i>
+                        <span class="truncate">Anggaran & Realisasi</span>
+                    </button>
+                    <button onclick="switchTab('capa')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="capa">
+                        <i class="fa-solid fa-clipboard-check w-4 text-center text-teal-400"></i>
+                        <span class="truncate">CAPA (Koreksi)</span>
+                    </button>
+                    <button onclick="switchTab('laporan')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="laporan">
+                        <i class="fa-solid fa-file-lines w-4 text-center text-orange-400"></i>
+                        <span class="truncate">Laporan Instansi</span>
+                    </button>
+                    <button onclick="switchTab('pengaturan')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white" data-tab="pengaturan">
+                        <i class="fa-solid fa-users-gear w-4 text-center text-slate-400"></i>
+                        <span class="truncate">Pengaturan</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 flex flex-col overflow-y-auto bg-slate-100 p-3 sm:p-5 custom-scrollbar relative" id="mainContentContainer">
+                <!-- Dynamic Content Injection -->
+            </main>
+
+            <!-- Floating Action Button (FAB) for Adding Entries (Hidden on Overview) -->
+            <button id="moduleFabButton" onclick="openAddModal()" class="fixed right-6 bottom-20 md:bottom-16 z-40 bg-ehs-600/70 hover:bg-ehs-600 text-white w-14 h-14 rounded-full shadow-lg backdrop-blur-sm flex items-center justify-center text-xl transition-all duration-300 hover:scale-110 hover:shadow-ehs-500/50 hover:shadow-2xl hover:ring-4 hover:ring-ehs-400/50 active:scale-95 cursor-pointer border-2 border-white/30 hidden" title="Tambah Entri Baru">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+
+        <!-- Bottom Navigation Bar (Mobile Only: md:hidden) -->
+        <footer id="appMobileFooter" class="md:hidden bg-slate-950 border-t border-slate-800 px-6 py-3 flex justify-around items-center shrink-0 z-30 shadow-2xl">
+            <button onclick="switchFooterNav('menu')" id="footer-btn-menu" class="footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-slate-900 text-slate-400 hover:text-white transition-all duration-150 cursor-pointer shadow-lg border border-slate-800" title="Menu">
+                <i class="fa-solid fa-bars-staggered text-sm transition-colors"></i>
+            </button>
+            <button onclick="switchFooterNav('home')" id="footer-btn-home" class="footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-ehs-600 text-white transition-all duration-150 cursor-pointer shadow-lg border border-ehs-500" title="Home">
+                <i class="fa-solid fa-house-sharp text-sm transition-colors"></i>
+            </button>
+            <button onclick="switchFooterNav('schedule')" id="footer-btn-schedule" class="footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-slate-900 text-slate-400 hover:text-white transition-all duration-150 cursor-pointer shadow-lg border border-slate-800" title="Schedule">
+                <i class="fa-solid fa-calendar-check text-sm transition-colors"></i>
+            </button>
+        </footer>
+
+        <!-- Desktop & Laptop Footer (Desktop Only: hidden md:flex) -->
+        <footer class="hidden md:flex bg-slate-900 text-slate-400 text-xs border-t border-slate-800 px-6 py-3 justify-between items-center shrink-0 z-20 w-full mt-auto">
+            <div class="flex items-center space-x-4">
+                <span class="font-bold text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-amber-400"></i> SATRIA 360
+                </span>
+                <span class="text-slate-600">|</span>
+                <span class="text-slate-400">Sistem Monitoring K3L © 2026</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="saveProjectToCloud()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3 py-1 rounded-full border border-slate-700 transition flex items-center gap-1.5 font-semibold text-[11px] cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Ke Cloud
+                </button>
+                <span class="text-emerald-400 font-semibold flex items-center gap-1.5 bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700/50">
+                    <i class="fa-solid fa-circle text-[7px] animate-pulse"></i> Real-time Active
+                </span>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Modal Form Tambah Data -->
+    <div id="dataModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all max-h-[90vh] flex flex-col">
+            <div class="bg-ehs-900 text-white px-5 py-3.5 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-sm sm:text-base flex items-center gap-2" id="modalTitleText">
+                    <i class="fa-solid fa-circle-plus text-amber-400"></i> Tambah Entri Modul
+                </h3>
+                <button onclick="closeAddModal()" class="text-slate-300 hover:text-white text-lg font-bold cursor-pointer p-1">&times;</button>
+            </div>
+            <form id="ehsForm" onsubmit="handleFormSubmit(event)" class="p-5 space-y-3.5 text-xs overflow-y-auto custom-scrollbar flex-1">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Entitas Perusahaan (Unit)</label>
+                    <select id="modalUnitSelect" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 focus:ring-2 focus:ring-ehs-600 focus:outline-none cursor-pointer">
+                        <option value="PKS MI - Pulo Jantan">PKS MI - Pulo Jantan</option>
+                        <option value="Kebun MI - Aek Kuo">Kebun MI - Aek Kuo</option>
+                        <option value="Kebun BM">Kebun BM</option>
+                        <option value="Kebun HS">Kebun HS</option>
+                    </select>
+                </div>
+                <div id="dynamicFormFields" class="space-y-3.5">
+                    <!-- Dynamic fields -->
+                </div>
+                <div class="pt-3 flex justify-end space-x-3 border-t shrink-0">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-100 font-medium cursor-pointer">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-ehs-600 text-white rounded-lg hover:bg-ehs-700 font-semibold shadow cursor-pointer">Simpan Entri</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-12 right-4 left-4 sm:left-auto sm:right-5 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 text-xs border border-slate-700">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <div>
+            <div id="toastTitle" class="font-bold">SATRIA 360 Updated</div>
+            <div id="toastDesc" class="text-slate-300 text-[11px]">Data tersinkronisasi.</div>
+        </div>
+    </div>
+
+    <!-- Application Engine Logic -->
+    <script>
+        // Master Data Repository for SATRIA 360
+        let ehsMasterData = {
+            k3: [
+                { id: "K3-001", unit: "PKS MI - Pulo Jantan", tanggal: "2026-01-12", jenis: "Near Miss", uraian: "Kabel panel genset terkelupas nyaris korsleting", pic: "Ahmad Fauzi", status: "Selesai", severity: "Low" },
+                { id: "K3-002", unit: "Kebun MI - Aek Kuo", tanggal: "2026-02-04", jenis: "First Aid Injury", uraian: "Pekerja panen terkena duri sawit ringan", pic: "Slamet Riyadi", status: "Closed", severity: "Low" }
+            ],
+            lingkungan: [
+                { id: "PROPER-01", unit: "PKS MI - Pulo Jantan", aspek: "Pemakaian Air", bulan: "Januari", tahun: "2026", nilai: 1.18, bakuMutu: "< 1.5 m3", status: "Efisien" },
+                { id: "PROPER-02", unit: "PKS MI - Pulo Jantan", aspek: "Pemakaian Air", bulan: "Februari", tahun: "2026", nilai: 1.22, bakuMutu: "< 1.5 m3", status: "Efisien" },
+                { id: "PROPER-03", unit: "PKS MI - Pulo Jantan", aspek: "Pemakaian Air", bulan: "Maret", tahun: "2026", nilai: 1.25, bakuMutu: "< 1.5 m3", status: "Efisien" },
+                { id: "PROPER-04", unit: "PKS MI - Pulo Jantan", aspek: "Pemakaian Air", bulan: "Januari", tahun: "2025", nilai: 1.62, bakuMutu: "< 1.5 m3", status: "Tidak Efisien" },
+                { id: "PROPER-05", unit: "PKS MI - Pulo Jantan", aspek: "Pemakaian Air", bulan: "Februari", tahun: "2025", nilai: 1.58, bakuMutu: "< 1.5 m3", status: "Tidak Efisien" },
+                { id: "PROPER-13", unit: "PKS MI - Pulo Jantan", aspek: "Udara", parameter: "Emisi Genset / Boiler", nilai: "245 mg/Nm3", bakuMutu: "< 300", status: "Memenuhi" },
+                { id: "PROPER-14", unit: "Kebun BM", aspek: "Limbah B3", parameter: "Neraca Limbah B3 (Ton)", nilai: "1.4 Ton", bakuMutu: "Logbook Sesuai", status: "Valid" },
+                { id: "PROPER-15", unit: "Kebun MI - Aek Kuo", aspek: "Gambut (TMAT)", parameter: "Tinggi Muka Air Tanah (cm)", nilai: "-55 cm", bakuMutu: ">= -40 cm", status: "Terkontrol" },
+                { id: "PROPER-16", unit: "PKS MI - Pulo Jantan", aspek: "Limbah Cair Pabrik", parameter: "BOD (mg/L)", nilai: "45.2", bakuMutu: "< 100", status: "Memenuhi" },
+                { id: "PROPER-17", unit: "Kebun HS", aspek: "Limbah Domestik", parameter: "Uji Effluent Septic Tank", nilai: "15 mg/L", bakuMutu: "< 30", status: "Memenuhi" }
+            ],
+            kebakaran: [
+                { id: "HOT-01", unit: "Kebun MI - Aek Kuo", hotspot: "Blok 42 Afdeling 3", koordinat: "0.4521 S, 101.2415 E", tingkatSiaga: "Siaga 1 (Kering)", suhu: "34.5°C", status: "Patroli Rutin" }
+            ],
+            perizinan: [
+                { id: "PER-01", unit: "PKS MI - Pulo Jantan", dokumen: "Izin Limbah B3 (PPLB3)", instansi: "KLHK / PTSP", noSk: "SK.102/MENLHK/PLB.3/2023", masaBerlaku: "2028-05-14", status: "Aktif" },
+                { id: "PER-02", unit: "Kebun MI - Aek Kuo", dokumen: "Izin Penguatan Pembukaan Lahan", instansi: "Dinas Perkebunan", noSk: "503/DPK/2022", masaBerlaku: "2027-11-20", status: "Aktif" }
+            ],
+            pelatihan: [
+                { id: "TR-01", unit: "PKS MI - Pulo Jantan", program: "Sertifikasi Ahli K3 Umum", peserta: "12 Orang", tanggal: "10-22 Jan 2026", penyelenggara: "PJK3 Bina Amanah", status: "Selesai" },
+                { id: "TR-02", unit: "Kebun BM", program: "Pelatihan Tanggap Darurat Karhutla", peserta: "25 Orang", tanggal: "15 Feb 2026", penyelenggara: "Tim Fire Brigade EHS", status: "Selesai" }
+            ],
+            sertifikasi: [
+                { id: "CERT-01", unit: "PKS MI - Pulo Jantan", standar: "ISPO (Indonesian Sustainable Palm Oil)", lembaga: "TÜV Rheinland", status: "Valid", auditBerikutnya: "Agustus 2026" },
+                { id: "CERT-02", unit: "Kebun MI - Aek Kuo", standar: "RSPO Principles & Criteria", lembaga: "Mutuagung Lestari", status: "Valid", auditBerikutnya: "November 2026" }
+            ],
+            schedule: [
+                { id: "SCH-01", unit: "PKS MI - Pulo Jantan", kegiatan: "Internal K3 & Audit Triwulan I", pic: "Siti Rahma, S.T.", startDate: "2026-03-25", dueDate: "2026-03-27", status: "Proses" },
+                { id: "SCH-02", unit: "Kebun BM", kegiatan: "Uji Emisi Genset & Boiler Periodic", pic: "Ahmad Dahlan", startDate: "2026-04-10", dueDate: "2026-04-12", status: "Belum Mulai" }
+            ],
+            anggaran: [
+                { id: "BDG-01", unit: "PKS MI - Pulo Jantan", program: "Pengelolaan Limbah B3 & TPS B3", anggaran: 120000000, realisasi: 95000000, persen: 79 },
+                { id: "BDG-02", unit: "Kebun MI - Aek Kuo", program: "Pengadaan APD & Perlangkapan Safety", anggaran: 85000000, realisasi: 72000000, persen: 84 }
+            ],
+            capa: [
+                { id: "CAPA-01", unit: "PKS MI - Pulo Jantan", temuan: "Kotak P3K workshop kosong", akarMasalah: "Inspeksi bulanan terlewat", tindakanKoreksi: "Refilling & penunjukan PIC baru", status: "Closed", dueDate: "2026-02-10" },
+                { id: "CAPA-02", unit: "Kebun HS", temuan: "Label simbol Limbah B3 pudar", akarMasalah: "Paparan cuaca ekstrim", tindakanKoreksi: "Pemasangan plat alumunium baru", status: "Closed", dueDate: "2026-02-28" }
+            ],
+            laporan: [
+                { id: "REP-01", unit: "PKS MI - Pulo Jantan", kategori: "K3", namaPelaporan: "Laporan Semester P2K3", instansi: "Dinas Tenaga Kerja Prov. Sumut", periode: "Semester I - 2026", statusPengiriman: "Terkirim Tepat Waktu" },
+                { id: "REP-02", unit: "Kebun MI - Aek Kuo", kategori: "Lingkungan", namaPelaporan: "Laporan RKL-RPL Semester II", instansi: "KLHK / DLH Kabupaten", periode: "Semester II - 2025", statusPengiriman: "Diterima KLHK Online" }
+            ],
+            pengaturan: [
+                { id: "USR-01", nik: "198801012015", unit: "PKS MI - Pulo Jantan", nama: "Siti Rahma, S.T.", hakAkses: "Admin" },
+                { id: "USR-02", nik: "199205122018", unit: "Kebun MI - Aek Kuo", nama: "Ahmad Dahlan", hakAkses: "User" },
+                { id: "USR-03", nik: "199508202021", unit: "Kebun BM", nama: "Budi Santoso", hakAkses: "Viewer" }
+            ]
+        };
+
+        let currentActiveTab = 'overview';
+        let currentUnitFilter = 'ALL';
+        let tableSearchQuery = '';
+        let currentEnvSubKey = 'airbaku'; // Default to Pemakaian Air
+        let selectedAirYears = ['2026', '2025']; // Default years for comparison
+        let editingPengaturanIndex = null; // Track editing index for Pengaturan
+
+        // Define core functions and expose them globally to prevent ReferenceErrors
+        window.openAddModal = function() {
+            const modal = document.getElementById('dataModal');
+            if(modal) {
+                modal.classList.remove('hidden');
+                editingPengaturanIndex = null; // Reset editing index for new entry
+                updateModalFields();
+            }
+        };
+
+        window.closeAddModal = function() {
+            const modal = document.getElementById('dataModal');
+            if(modal) {
+                modal.classList.add('hidden');
+                editingPengaturanIndex = null;
+            }
+        };
+
+        window.editPengaturanRecord = function(index) {
+            const filtered = ehsMasterData.pengaturan.filter(i => filterRecordByUnitAndSearch(i));
+            const record = filtered[index];
+            if (!record) return;
+
+            const realIndex = ehsMasterData.pengaturan.findIndex(i => i.id === record.id);
+            if (realIndex === -1) return;
+
+            editingPengaturanIndex = realIndex;
+            const modal = document.getElementById('dataModal');
+            if(modal) {
+                modal.classList.remove('hidden');
+                updateModalFields();
+
+                // Populate form fields with existing record
+                setTimeout(() => {
+                    const nikInput = document.getElementById('mPengaturanNik');
+                    const namaInput = document.getElementById('mPengaturanNama');
+                    const roleSelect = document.getElementById('mPengaturanRole');
+                    const unitSelect = document.getElementById('modalUnitSelect');
+
+                    if(nikInput) nikInput.value = record.nik || '';
+                    if(namaInput) namaInput.value = record.nama || '';
+                    if(roleSelect) roleSelect.value = record.hakAkses || 'User';
+                    if(unitSelect) unitSelect.value = record.unit || 'PKS MI - Pulo Jantan';
+                }, 50);
+            }
+        };
+
+        window.deletePengaturanRecord = function(index) {
+            const filtered = ehsMasterData.pengaturan.filter(i => filterRecordByUnitAndSearch(i));
+            const record = filtered[index];
+            if (!record) return;
+
+            const realIndex = ehsMasterData.pengaturan.findIndex(i => i.id === record.id);
+            if (realIndex !== -1) {
+                ehsMasterData.pengaturan.splice(realIndex, 1);
+                renderTabContentBody('pengaturan');
+                showToast("Data Dihapus", "Akun pengguna telah dihapus dari sistem.");
+            }
+        };
+
+        window.editAirRecord = function(index) {
+            const filtered = ehsMasterData.lingkungan.filter(i => i.aspek === 'Pemakaian Air' && filterRecordByUnitAndSearch(i));
+            const record = filtered[index];
+            if (!record) return;
+
+            const realIndex = ehsMasterData.lingkungan.findIndex(i => i.id === record.id);
+            if (realIndex === -1) return;
+
+            const newNilai = prompt("Masukkan Nilai Pemakaian Air baru (m3/ton TBS):", record.nilai);
+            if (newNilai === null) return;
+
+            const nilaiNum = parseFloat(newNilai);
+            if (isNaN(nilaiNum)) {
+                showToast("Input Tidak Valid", "Masukkan angka yang valid untuk nilai pemakaian air.");
+                return;
+            }
+
+            ehsMasterData.lingkungan[realIndex].nilai = nilaiNum;
+            ehsMasterData.lingkungan[realIndex].status = nilaiNum < 1.5 ? "Efisien" : "Tidak Efisien";
+
+            switchEnvSubTab(currentEnvSubKey);
+            showToast("Data Diperbarui", `Entri ${record.id} berhasil diperbarui.`);
+        };
+
+        window.deleteAirRecord = function(index) {
+            const filtered = ehsMasterData.lingkungan.filter(i => i.aspek === 'Pemakaian Air' && filterRecordByUnitAndSearch(i));
+            const record = filtered[index];
+            if (!record) return;
+
+            const realIndex = ehsMasterData.lingkungan.findIndex(i => i.id === record.id);
+            if (realIndex !== -1) {
+                ehsMasterData.lingkungan.splice(realIndex, 1);
+                switchEnvSubTab(currentEnvSubKey);
+                showToast("Data Dihapus", "Entri Pemakaian Air telah dihapus.");
+            }
+        };
+
+        window.showToast = function(title, desc) {
+            const toast = document.getElementById('toastNotification');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastDesc = document.getElementById('toastDesc');
+            if (toast && toastTitle && toastDesc) {
+                toastTitle.innerText = title;
+                toastDesc.innerText = desc;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3500);
+            }
+        };
+
+        window.filterRecordByUnitAndSearch = function(record) {
+            const matchUnit = currentUnitFilter === 'ALL' || record.unit === currentUnitFilter;
+            if (!matchUnit) return false;
+
+            if (!tableSearchQuery) return true;
+            const searchLower = tableSearchQuery.toLowerCase();
+            
+            return Object.values(record).some(val => 
+                val !== null && val !== undefined && val.toString().toLowerCase().includes(searchLower)
+            );
+        };
+
+        window.deleteRecord = function(modulKey, index) {
+            if (ehsMasterData[modulKey] && ehsMasterData[modulKey].length > index) {
+                ehsMasterData[modulKey].splice(index, 1);
+                switchTab(currentActiveTab);
+                if (currentActiveTab === 'lingkungan') {
+                    switchEnvSubTab(currentEnvSubKey);
+                }
+                showToast("Data Dihapus", "Entri telah berhasil dihapus dari sistem.");
+            }
+        };
+
+        window.handleLoginSubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const unit = document.getElementById('loginUnitSelect').value;
+            
+            const loginScreen = document.getElementById('loginScreen');
+            if(loginScreen) {
+                loginScreen.classList.add('opacity-0', 'pointer-events-none', 'transition-all', 'duration-300');
+                setTimeout(() => loginScreen.style.display = 'none', 300);
+            }
+
+            currentUnitFilter = unit;
+            const globalFilter = document.getElementById('globalUnitFilter');
+            if(globalFilter) globalFilter.value = unit;
+
+            switchTab('overview');
+            showToast("Login Berhasil", `Selamat datang, ${username.split('@')[0]}! Unit: ${unit}`);
+        };
+
+        window.handleLogout = function() {
+            const loginScreen = document.getElementById('loginScreen');
+            if(loginScreen) {
+                loginScreen.style.display = 'flex';
+                setTimeout(() => {
+                    loginScreen.classList.remove('opacity-0', 'pointer-events-none');
+                }, 10);
+            }
+            const passInput = document.getElementById('loginPassword');
+            if(passInput) passInput.value = '';
+            
+            showToast("Logout Berhasil", "Sesi Anda telah diakhiri. Silakan login kembali.");
+        };
+
+        window.toggleMobileSidebar = function() {
+            const sidebar = document.getElementById('appSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar && backdrop) {
+                sidebar.classList.toggle('-translate-x-full');
+                backdrop.classList.toggle('hidden');
+            }
+        };
+
+        window.handleTableSearch = function(e) {
+            tableSearchQuery = e.target.value.toLowerCase().trim();
+            if (currentActiveTab === 'lingkungan') {
+                const activeBtn = document.querySelector('.env-sub-btn.bg-emerald-700');
+                const subKey = activeBtn ? activeBtn.id.replace('env-sub-', '') : 'air';
+                switchEnvSubTab(subKey);
+            } else {
+                renderTabContentBody(currentActiveTab);
+            }
+        };
+
+        window.exportToExcel = function() {
+            try {
+                let currentData = ehsMasterData[currentActiveTab] || [];
+                if (currentData.length === 0) {
+                    showToast("Export Gagal", "Tidak ada data untuk diexport pada modul ini.");
+                    return;
+                }
+                
+                const worksheet = XLSX.utils.json_to_sheet(currentData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, currentActiveTab.toUpperCase());
+                
+                XLSX.writeFile(workbook, `SATRIA_360_${currentActiveTab.toUpperCase()}_Export.xlsx`);
+                showToast("Export Berhasil", `Data modul ${currentActiveTab} berhasil diunduh ke Excel.`);
+            } catch (err) {
+                console.error(err);
+                showToast("Export Gagal", "Terjadi kesalahan saat mengeksport data.");
+            }
+        };
+
+        window.saveProjectToCloud = function() {
+            showToast("SATRIA 360 Tersimpan", "Seluruh data K3 dan Lingkungan tersimpan dengan aman.");
+        };
+
+        window.switchTab = function(tabName) {
+            currentActiveTab = tabName;
+            tableSearchQuery = '';
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.getAttribute('data-tab') === tabName) {
+                    btn.className = "nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left bg-ehs-800 text-white shadow";
+                } else {
+                    btn.className = "nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition text-left hover:bg-slate-800 hover:text-white text-slate-300";
+                }
+            });
+            
+            const fab = document.getElementById('moduleFabButton');
+            if (fab) {
+                if (tabName === 'overview') {
+                    fab.classList.add('hidden');
+                } else {
+                    fab.classList.remove('hidden');
+                }
+            }
+
+            renderTabContentBody(tabName);
+
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('appSidebar');
+                const backdrop = document.getElementById('sidebarBackdrop');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                }
+            }
+        };
+
+        window.switchFooterNav = function(action) {
+            const btnMenu = document.getElementById('footer-btn-menu');
+            const btnHome = document.getElementById('footer-btn-home');
+            const btnSchedule = document.getElementById('footer-btn-schedule');
+
+            btnMenu.className = "footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-slate-900 text-slate-400 hover:text-white transition-all duration-150 cursor-pointer shadow-lg border border-slate-800";
+            btnHome.className = "footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-slate-900 text-slate-400 hover:text-white transition-all duration-150 cursor-pointer shadow-lg border border-slate-800";
+            btnSchedule.className = "footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-slate-900 text-slate-400 hover:text-white transition-all duration-150 cursor-pointer shadow-lg border border-slate-800";
+
+            if (action === 'menu') {
+                btnMenu.className = "footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-ehs-600 text-white transition-all duration-150 cursor-pointer shadow-lg border border-ehs-500";
+                toggleMobileSidebar();
+            } else if (action === 'home') {
+                btnHome.className = "footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-ehs-600 text-white transition-all duration-150 cursor-pointer shadow-xl border-2 border-ehs-500";
+                switchTab('overview');
+            } else if (action === 'schedule') {
+                btnSchedule.className = "footer-nav-btn group flex items-center justify-center w-11 h-11 rounded-full bg-ehs-600 text-white transition-all duration-150 cursor-pointer shadow-lg border border-ehs-500";
+                switchTab('schedule');
+            }
+        };
+
+        window.renderTabContentBody = function(tab) {
+            const container = document.getElementById('mainContentContainer');
+            if (!container) return;
+            if (tab === 'overview') {
+                container.innerHTML = generateOverviewHTML();
+                setTimeout(() => initCharts(), 100);
+            } else if (tab === 'lingkungan') {
+                container.innerHTML = generateLingkunganHTML();
+                setTimeout(() => switchEnvSubTab('air'), 100);
+            } else if (tab === 'kebakaran') {
+                container.innerHTML = generateKebakaranHTML();
+                setTimeout(() => initLeafletMap(), 100);
+            } else if (tab === 'k3') {
+                container.innerHTML = generateK3HTML();
+                setTimeout(() => initK3Chart(), 100);
+            } else {
+                container.innerHTML = generateModuleHTML(tab);
+            }
+        };
+
+        window.generateModuleHTML = function(modulKey) {
+            const titlesMap = {
+                perizinan: "Perizinan & Legalitas",
+                pelatihan: "Pelatihan & Sertifikat",
+                sertifikasi: "Sertifikasi",
+                schedule: "Agenda",
+                anggaran: "Anggaran & Realisasi",
+                capa: "CAPA (Koreksi)",
+                laporan: "Laporan Instansi",
+                pengaturan: "Pengaturan Akun & Hak Akses"
+            };
+
+            const title = titlesMap[modulKey] || modulKey.toUpperCase();
+            const data = (ehsMasterData[modulKey] || []).filter(i => filterRecordByUnitAndSearch(i));
+
+            let tableHeaders = '';
+            let tableRows = '';
+
+            if (modulKey === 'schedule') {
+                tableHeaders = `
+                    <th class="px-3 py-2.5 min-w-[80px]">ID</th>
+                    <th class="px-3 py-2.5 min-w-[130px]">Unit</th>
+                    <th class="px-3 py-2.5 min-w-[200px]">Kegiatan</th>
+                    <th class="px-3 py-2.5 min-w-[120px]">PIC</th>
+                    <th class="px-3 py-2.5 min-w-[100px]">Start Date</th>
+                    <th class="px-3 py-2.5 min-w-[100px]">Due Date</th>
+                    <th class="px-3 py-2.5 min-w-[110px]">Status Progress</th>
+                    <th class="px-3 py-2.5 w-12 text-center">Aksi</th>
+                `;
+                tableRows = data.length === 0 ? `<tr><td colspan="8" class="p-6 text-center text-slate-400">Tidak ada data agenda.</td></tr>` : data.map((item, idx) => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                        <td class="px-3 py-2.5 font-semibold">${item.unit}</td>
+                        <td class="px-3 py-2.5 font-medium text-slate-900">${item.kegiatan || item.uraian || '-'}</td>
+                        <td class="px-3 py-2.5 text-slate-600">${item.pic || '-'}</td>
+                        <td class="px-3 py-2.5 text-slate-500 whitespace-nowrap">${item.startDate || '-'}</td>
+                        <td class="px-3 py-2.5 text-slate-500 whitespace-nowrap">${item.dueDate || '-'}</td>
+                        <td class="px-3 py-2.5"><span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-bold text-[10px] inline-block whitespace-nowrap">${item.status}</span></td>
+                        <td class="px-3 py-2.5 text-center"><button onclick="deleteRecord('${modulKey}', ${getDataIndexGeneric(modulKey, item)})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `).join('');
+            } else if (modulKey === 'pengaturan') {
+                tableHeaders = `
+                    <th class="px-3 py-2.5 min-w-[90px]">ID</th>
+                    <th class="px-3 py-2.5 min-w-[110px]">NIK</th>
+                    <th class="px-3 py-2.5 min-w-[140px]">Unit</th>
+                    <th class="px-3 py-2.5 min-w-[180px]">Nama</th>
+                    <th class="px-3 py-2.5 min-w-[110px]">Hak Akses</th>
+                    <th class="px-3 py-2.5 w-20 text-center">Aksi</th>
+                `;
+                tableRows = data.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-400">Tidak ada data pengguna.</td></tr>` : data.map((item, idx) => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                        <td class="px-3 py-2.5 font-mono text-slate-700 whitespace-nowrap">${item.nik}</td>
+                        <td class="px-3 py-2.5 font-semibold text-slate-800">${item.unit}</td>
+                        <td class="px-3 py-2.5 font-bold text-slate-900">${item.nama}</td>
+                        <td class="px-3 py-2.5"><span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold text-[10px] inline-block whitespace-nowrap">${item.hakAkses}</span></td>
+                        <td class="px-3 py-2.5 text-center space-x-2">
+                            <button onclick="editPengaturanRecord(${idx})" class="text-blue-500 hover:text-blue-700 cursor-pointer" title="Edit Akun"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deletePengaturanRecord(${idx})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus Akun"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tableHeaders = `
+                    <th class="px-3 py-2.5 min-w-[90px]">ID</th>
+                    <th class="px-3 py-2.5 min-w-[140px]">Unit</th>
+                    <th class="px-3 py-2.5 min-w-[250px]">Keterangan / Uraian</th>
+                    <th class="px-3 py-2.5 min-w-[120px]">Status / Nilai</th>
+                    <th class="px-3 py-2.5 w-12 text-center">Aksi</th>
+                `;
+                tableRows = data.length === 0 ? `<tr><td colspan="5" class="p-6 text-center text-slate-400">Tidak ada data untuk modul ini.</td></tr>` : data.map((item, idx) => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                        <td class="px-3 py-2.5 font-semibold">${item.unit}</td>
+                        <td class="px-3 py-2.5 font-medium text-slate-900">${item.uraian || item.dokumen || item.program || item.standar || item.temuan || item.namaPelaporan || item.nama || '-'}</td>
+                        <td class="px-3 py-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold text-[10px] inline-block whitespace-nowrap">${item.status}</span></td>
+                        <td class="px-3 py-2.5 text-center"><button onclick="deleteRecord('${modulKey}', ${getDataIndexGeneric(modulKey, item)})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `).join('');
+            }
+
+            return `
+                <div class="space-y-6 pb-16">
+                    <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-900">${title}</h2>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-3 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <span class="font-bold text-xs text-slate-700 uppercase">Tabel ${title}</span>
+                            <div class="relative w-full sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" oninput="handleTableSearch(event)" value="${tableSearchQuery}" placeholder="Cari di tabel..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1 text-xs focus:ring-2 focus:ring-ehs-600 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="fit-table text-left text-xs text-slate-700 min-w-[600px]">
+                                <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b text-[11px]">
+                                    <tr>${tableHeaders}</tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    ${tableRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.getDataIndexGeneric = function(modulKey, item) {
+            return (ehsMasterData[modulKey] || []).findIndex(i => i.id === item.id);
+        };
+
+        window.generateOverviewHTML = function() {
+            const upcomingSchedules = (ehsMasterData.schedule || []).filter(i => currentUnitFilter === 'ALL' || i.unit === currentUnitFilter);
+            
+            const overviewItems = [
+                { id: "K3-001", unit: "PKS MI - Pulo Jantan", uraian: "Kabel panel genset terkelupas nyaris korsleting", status: "Selesai", statusClass: "bg-emerald-100 text-emerald-800" },
+                { id: "HOT-01", unit: "Kebun MI - Aek Kuo", uraian: "Titik Hotspot Blok 42 Afdeling 3", status: "Siaga 1", statusClass: "bg-red-100 text-red-800" },
+                { id: "PROPER", unit: "PKS MI - Pulo Jantan", uraian: "Pemakaian Air 1.18 m3/Ton (Efisien)", status: "Memenuhi", statusClass: "bg-emerald-100 text-emerald-800" }
+            ];
+
+            const filteredOverview = overviewItems.filter(item => {
+                const matchUnit = currentUnitFilter === 'ALL' || item.unit === currentUnitFilter;
+                const matchQuery = !tableSearchQuery || 
+                    item.id.toLowerCase().includes(tableSearchQuery) ||
+                    item.unit.toLowerCase().includes(tableSearchQuery) ||
+                    item.uraian.toLowerCase().includes(tableSearchQuery) ||
+                    item.status.toLowerCase().includes(tableSearchQuery);
+                return matchUnit && matchQuery;
+            });
+
+            return `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Insiden K3</div>
+                                <div class="text-base font-bold text-slate-900 mt-0.5">${ehsMasterData.k3.length} Kasus</div>
+                            </div>
+                            <div class="bg-amber-50 p-2 rounded-lg text-amber-600"><i class="fa-solid fa-helmet-safety text-sm"></i></div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Hotspot Karhutla</div>
+                                <div class="text-base font-bold text-red-600 mt-0.5">${ehsMasterData.kebakaran.length} Titik</div>
+                            </div>
+                            <div class="bg-red-50 p-2 rounded-lg text-red-600"><i class="fa-solid fa-fire-flame-curved text-sm"></i></div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Kriteria PROPER</div>
+                                <div class="text-base font-bold text-emerald-600 mt-0.5">100% Memenuhi</div>
+                            </div>
+                            <div class="bg-emerald-50 p-2 rounded-lg text-emerald-600"><i class="fa-solid fa-leaf text-sm"></i></div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Program CAPA</div>
+                                <div class="text-base font-bold text-purple-600 mt-0.5">${ehsMasterData.capa.length} Program</div>
+                            </div>
+                            <div class="bg-purple-50 p-2 rounded-lg text-purple-600"><i class="fa-solid fa-clipboard-check text-sm"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-ehs-900 to-slate-900 text-white p-4 rounded-xl shadow-md border border-ehs-700/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-ehs-800 p-2.5 rounded-lg text-amber-400"><i class="fa-solid fa-shield-halved text-lg"></i></div>
+                            <div>
+                                <div class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Jadwal Agenda K3L Terdekat</div>
+                                <div class="text-sm font-bold text-white mt-0.5">
+                                    ${upcomingSchedules.length > 0 ? upcomingSchedules[0].kegiatan + ' (' + upcomingSchedules[0].tanggal + ')' : 'Tidak ada jadwal mendesak'}
+                                </div>
+                                <div class="text-[11px] text-slate-300">Unit: ${upcomingSchedules.length > 0 ? upcomingSchedules[0].unit : '-'} | System SATRIA 360</div>
+                            </div>
+                        </div>
+                        <button onclick="switchTab('schedule')" class="bg-ehs-600 hover:bg-ehs-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition cursor-pointer shrink-0">
+                            Lihat Agenda (${upcomingSchedules.length})
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-bold text-xs text-slate-800 uppercase">Realisasi Anggaran K3 & Lingkungan (1 Tahun)</h4>
+                                <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Juta Rupiah</span>
+                            </div>
+                            <div class="h-44 relative w-full"><canvas id="budgetChart"></canvas></div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-bold text-xs text-slate-800 uppercase">Distribusi Aktivitas K3L</h4>
+                                <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Lintas Modul</span>
+                            </div>
+                            <div class="h-44 relative w-full"><canvas id="k3PieChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-3 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <span class="font-bold text-xs text-slate-700 uppercase">Ringkasan Aktivitas Terkini</span>
+                            <div class="relative w-full sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" oninput="handleTableSearch(event)" value="${tableSearchQuery}" placeholder="Cari di tabel..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1 text-xs focus:ring-2 focus:ring-ehs-600 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="fit-table text-left text-xs text-slate-700 min-w-[550px]">
+                                <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b text-[11px]">
+                                    <tr>
+                                        <th class="px-3 py-2.5 min-w-[90px]">ID Modul</th>
+                                        <th class="px-3 py-2.5 min-w-[140px]">Unit Operasional</th>
+                                        <th class="px-3 py-2.5 min-w-[200px]">Uraian Keterangan</th>
+                                        <th class="px-3 py-2.5 min-w-[100px]">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    ${filteredOverview.length === 0 ? `<tr><td colspan="4" class="p-4 text-center text-slate-400">Tidak ada data yang sesuai filter.</td></tr>` : filteredOverview.map(item => `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                                            <td class="px-3 py-2.5 font-semibold text-slate-800">${item.unit}</td>
+                                            <td class="px-3 py-2.5 font-medium text-slate-900">${item.uraian}</td>
+                                            <td class="px-3 py-2.5"><span class="${item.statusClass} px-2 py-0.5 rounded font-semibold text-[10px] inline-block whitespace-nowrap">${item.status}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        let k3TrendChartInstance = null;
+        window.generateK3HTML = function() {
+            const data = ehsMasterData.k3.filter(i => filterRecordByUnitAndSearch(i));
+
+            return `
+                <div class="space-y-6 pb-16">
+                    <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-900">K3</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <h4 class="font-bold text-xs text-slate-800 mb-2 uppercase">Grafik Tren Kejadian K3 (1 Tahun 2026)</h4>
+                            <div class="h-48 relative w-full"><canvas id="k3TrendChart"></canvas></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                            <h4 class="font-bold text-xs text-slate-800 mb-2 uppercase">Statistik Kinerja K3</h4>
+                            <div class="grid grid-cols-2 gap-3 mt-4">
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">Total Insiden</div>
+                                    <div class="text-lg font-bold text-amber-600 mt-1">${ehsMasterData.k3.length} Kasus</div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">Tingkat Penyelesaian</div>
+                                    <div class="text-lg font-bold text-emerald-600 mt-1">100% Selesai</div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">Zero Accident</div>
+                                    <div class="text-base font-bold text-blue-600 mt-1">1.25 Jt Jam</div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">Safety Talk</div>
+                                    <div class="text-base font-bold text-purple-600 mt-1">Rutin Setiap Minggu</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-3 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <span class="font-bold text-xs text-slate-700 uppercase">Data Kejadian K3 & Insiden</span>
+                            <div class="relative w-full sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" oninput="handleTableSearch(event)" value="${tableSearchQuery}" placeholder="Cari di tabel..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1 text-xs focus:ring-2 focus:ring-ehs-600 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="fit-table text-left text-xs text-slate-700 min-w-[700px]">
+                                <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b text-[11px]">
+                                    <tr>
+                                        <th class="px-3 py-2.5 min-w-[80px]">ID</th>
+                                        <th class="px-3 py-2.5 min-w-[140px]">Unit</th>
+                                        <th class="px-3 py-2.5 min-w-[100px]">Tanggal</th>
+                                        <th class="px-3 py-2.5 min-w-[130px]">Jenis</th>
+                                        <th class="px-3 py-2.5 min-w-[220px]">Uraian Kasus</th>
+                                        <th class="px-3 py-2.5 min-w-[110px]">PIC</th>
+                                        <th class="px-3 py-2.5 min-w-[90px]">Status</th>
+                                        <th class="px-3 py-2.5 w-12 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    ${data.length === 0 ? `<tr><td colspan="8" class="p-6 text-center text-slate-400">Tidak ada data K3 yang sesuai.</td></tr>` : data.map((item, idx) => `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                                            <td class="px-3 py-2.5 font-semibold">${item.unit}</td>
+                                            <td class="px-3 py-2.5 text-slate-500 whitespace-nowrap">${item.tanggal}</td>
+                                            <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold text-[10px] inline-block whitespace-nowrap">${item.jenis}</span></td>
+                                            <td class="px-3 py-2.5 font-medium text-slate-900">${item.uraian}</td>
+                                            <td class="px-3 py-2.5 text-slate-600">${item.pic}</td>
+                                            <td class="px-3 py-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold text-[10px] inline-block whitespace-nowrap">${item.status}</span></td>
+                                            <td class="px-3 py-2.5 text-center"><button onclick="deleteRecord('k3', ${idx})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.initK3Chart = function() {
+            const ctx = document.getElementById('k3TrendChart')?.getContext('2d');
+            if (!ctx) return;
+            if (k3TrendChartInstance) k3TrendChartInstance.destroy();
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const trendData = months.map((m, i) => {
+                return ehsMasterData.k3.filter(item => {
+                    const d = new Date(item.tanggal);
+                    return !isNaN(d) && d.getMonth() === i;
+                }).length || (i < 3 ? 1 : 0);
+            });
+
+            k3TrendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Jumlah Insiden K3',
+                        data: trendData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        };
+
+        let leafletMapInstance = null;
+        window.generateKebakaranHTML = function() {
+            const data = ehsMasterData.kebakaran.filter(i => filterRecordByUnitAndSearch(i));
+
+            return `
+                <div class="space-y-6 pb-16">
+                    <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-900">Kebakaran</h2>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-xs text-slate-800 uppercase mb-3"><i class="fa-solid fa-map-location-dot text-red-600 mr-1.5"></i> Peta Interaktif Hotspot & Perimeter Areal</h4>
+                        <div id="hotspotMap" class="w-full h-72 rounded-lg border border-slate-300 z-10"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-3 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <span class="font-bold text-xs text-slate-700 uppercase">Tabel Hotspot Karhutla</span>
+                            <div class="relative w-full sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" oninput="handleTableSearch(event)" value="${tableSearchQuery}" placeholder="Cari di tabel..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1 text-xs focus:ring-2 focus:ring-ehs-600 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="fit-table text-left text-xs text-slate-700 min-w-[650px]">
+                                <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b text-[11px]">
+                                    <tr>
+                                        <th class="px-3 py-2.5 min-w-[70px]">ID</th>
+                                        <th class="px-3 py-2.5 min-w-[130px]">Unit</th>
+                                        <th class="px-3 py-2.5 min-w-[160px]">Lokasi / Blok</th>
+                                        <th class="px-3 py-2.5 min-w-[160px]">Koordinat</th>
+                                        <th class="px-3 py-2.5 min-w-[120px]">Siaga</th>
+                                        <th class="px-3 py-2.5 min-w-[80px]">Suhu</th>
+                                        <th class="px-3 py-2.5 w-12 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    ${data.length === 0 ? `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada data hotspot.</td></tr>` : data.map((item, idx) => `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                                            <td class="px-3 py-2.5 font-semibold">${item.unit}</td>
+                                            <td class="px-3 py-2.5 font-medium text-slate-900">${item.hotspot}</td>
+                                            <td class="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap">${item.koordinat}</td>
+                                            <td class="px-3 py-2.5"><span class="bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold text-[10px] inline-block whitespace-nowrap">${item.tingkatSiaga}</span></td>
+                                            <td class="px-3 py-2.5 text-slate-600 whitespace-nowrap">${item.suhu}</td>
+                                            <td class="px-3 py-2.5 text-center"><button onclick="deleteRecord('kebakaran', ${idx})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.generateLingkunganHTML = function() {
+            return `
+                <div class="space-y-6 pb-16">
+                    <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-900">Lingkungan</h2>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 sm:gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                        <button onclick="switchEnvSubTab('airbaku')" id="env-sub-airbaku" class="env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-700 text-white shadow transition">Pemakaian Air</button>
+                        <button onclick="switchEnvSubTab('air')" id="env-sub-air" class="env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Air (Aspek)</button>
+                        <button onclick="switchEnvSubTab('udara')" id="env-sub-udara" class="env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Udara Emisi</button>
+                        <button onclick="switchEnvSubTab('limbahb3')" id="env-sub-limbahb3" class="env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Limbah B3</button>
+                        <button onclick="switchEnvSubTab('gambut')" id="env-sub-gambut" class="env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Gambut (TMAT)</button>
+                        <button onclick="switchEnvSubTab('limbahcair')" id="env-sub-limbahcair" class="env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Limbah Cair (IPAL)</button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                                <h4 class="font-bold text-slate-800 text-sm" id="envChartTitle">Grafik Pemakaian Air (m3/ton TBS)</h4>
+                                <div id="yearSelectorContainer" class="flex flex-wrap items-center gap-2"></div>
+                            </div>
+                            <div class="h-60 sm:h-64 relative w-full"><canvas id="envSubChart"></canvas></div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-3 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <span class="font-bold text-xs text-slate-700 uppercase" id="envSubTableTitle">Data Pemakaian Air</span>
+                                <div class="relative w-full sm:w-64">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                    <input type="text" oninput="handleTableSearch(event)" value="${tableSearchQuery}" placeholder="Cari di tabel..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1 text-xs focus:ring-2 focus:ring-ehs-600 focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="fit-table text-left text-xs text-slate-700 min-w-[620px]">
+                                    <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b text-[11px]">
+                                        <tr id="envTableHeaderRow"></tr>
+                                    </thead>
+                                    <tbody id="envSubTableBody" class="divide-y divide-slate-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        let envSubChartInstance = null;
+        window.switchEnvSubTab = function(subKey) {
+            currentEnvSubKey = subKey;
+            document.querySelectorAll('.env-sub-btn').forEach(btn => {
+                btn.className = "env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+            });
+            const activeBtn = document.getElementById('env-sub-' + subKey);
+            if(activeBtn) {
+                activeBtn.className = "env-sub-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-700 text-white shadow transition";
+            }
+
+            const headerRow = document.getElementById('envTableHeaderRow');
+            const tbody = document.getElementById('envSubTableBody');
+            const yearContainer = document.getElementById('yearSelectorContainer');
+
+            const fullYearMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            if (subKey === 'airbaku') {
+                if (yearContainer) {
+                    const allYears = ['2026', '2025', '2024', '2023'];
+                    yearContainer.innerHTML = `<span class="text-[11px] font-bold text-slate-500 mr-1">Bandingkan Tahun:</span>` + allYears.map(yr => `
+                        <label class="inline-flex items-center text-xs font-medium bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded cursor-pointer border border-slate-200">
+                            <input type="checkbox" value="${yr}" ${selectedAirYears.includes(yr) ? 'checked' : ''} onchange="toggleAirYearFilter(this)" class="rounded text-ehs-600 focus:ring-ehs-500 mr-1.5 cursor-pointer">
+                            ${yr}
+                        </label>
+                    `).join('');
+                }
+
+                if (headerRow) {
+                    headerRow.innerHTML = `
+                        <th class="px-3 py-2.5 min-w-[90px]">ID</th>
+                        <th class="px-3 py-2.5 min-w-[130px]">Unit</th>
+                        <th class="px-3 py-2.5 min-w-[110px]">Bulan</th>
+                        <th class="px-3 py-2.5 min-w-[80px]">Tahun</th>
+                        <th class="px-3 py-2.5 min-w-[130px]">Nilai (m3/ton TBS)</th>
+                        <th class="px-3 py-2.5 min-w-[110px]">Baku Mutu</th>
+                        <th class="px-3 py-2.5 min-w-[110px]">Status</th>
+                        <th class="px-3 py-2.5 w-20 text-center">Aksi</th>
+                    `;
+                }
+
+                const filtered = ehsMasterData.lingkungan.filter(i => i.aspek === 'Pemakaian Air' && filterRecordByUnitAndSearch(i));
+                if (tbody) {
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada data pemakaian air.</td></tr>`;
+                    } else {
+                        tbody.innerHTML = filtered.map((item, idx) => {
+                            const statusBadge = item.status === 'Efisien' 
+                                ? `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-[10px]">Efisien</span>`
+                                : `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold text-[10px]">Tidak Efisien</span>`;
+                            return `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                                    <td class="px-3 py-2.5 font-semibold">${item.unit}</td>
+                                    <td class="px-3 py-2.5 font-medium text-slate-900">${item.bulan || '-'}</td>
+                                    <td class="px-3 py-2.5 font-semibold text-slate-700">${item.tahun || '2026'}</td>
+                                    <td class="px-3 py-2.5 font-bold text-emerald-700 whitespace-nowrap">${item.nilai} m3/ton TBS</td>
+                                    <td class="px-3 py-2.5 text-slate-500 whitespace-nowrap">${item.bakuMutu}</td>
+                                    <td class="px-3 py-2.5">${statusBadge}</td>
+                                    <td class="px-3 py-2.5 text-center space-x-2">
+                                        <button onclick="editAirRecord(${idx})" class="text-blue-500 hover:text-blue-700 cursor-pointer" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                                        <button onclick="deleteAirRecord(${idx})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+                initEnvChart('airbaku');
+
+            } else {
+                if (yearContainer) yearContainer.innerHTML = '';
+                const mappingAspek = {
+                    air: "Air",
+                    udara: "Udara",
+                    limbahb3: "Limbah B3",
+                    gambut: "Gambut (TMAT)",
+                    limbahcair: "Limbah Cair Pabrik"
+                };
+                const targetAspek = mappingAspek[subKey];
+                if (headerRow) {
+                    headerRow.innerHTML = `
+                        <th class="px-3 py-2.5 min-w-[90px]">ID</th>
+                        <th class="px-3 py-2.5 min-w-[130px]">Unit</th>
+                        <th class="px-3 py-2.5 min-w-[200px]">Parameter</th>
+                        <th class="px-3 py-2.5 min-w-[110px]">Nilai Hasil</th>
+                        <th class="px-3 py-2.5 min-w-[110px]">Baku Mutu</th>
+                        <th class="px-3 py-2.5 min-w-[90px]">Status</th>
+                    `;
+                }
+
+                const filtered = ehsMasterData.lingkungan.filter(i => i.aspek === targetAspek && filterRecordByUnitAndSearch(i));
+                if (tbody) {
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada data untuk aspek ini.</td></tr>`;
+                    } else {
+                        tbody.innerHTML = filtered.map(item => `
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${item.id}</td>
+                                <td class="px-3 py-2.5 font-semibold">${item.unit}</td>
+                                <td class="px-3 py-2.5 font-medium text-slate-900">${item.parameter || item.bulan || '-'}</td>
+                                <td class="px-3 py-2.5 font-bold text-emerald-700 whitespace-nowrap">${item.nilai}</td>
+                                <td class="px-3 py-2.5 text-slate-500 whitespace-nowrap">${item.bakuMutu}</td>
+                                <td class="px-3 py-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold text-[10px] inline-block whitespace-nowrap">${item.status}</span></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                initEnvChart(subKey);
+            }
+        };
+
+        window.toggleAirYearFilter = function(checkbox) {
+            const yr = checkbox.value;
+            if (checkbox.checked) {
+                if (!selectedAirYears.includes(yr)) selectedAirYears.push(yr);
+            } else {
+                selectedAirYears = selectedAirYears.filter(y => y !== yr);
+            }
+            initEnvChart('airbaku');
+        };
+
+        window.initEnvChart = function(subKey) {
+            const ctx = document.getElementById('envSubChart')?.getContext('2d');
+            if(!ctx) return;
+            if(envSubChartInstance) envSubChartInstance.destroy();
+
+            const fullYearMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            if (subKey === 'airbaku') {
+                const colors = ['#16a34a', '#3b82f6', '#f59e0b', '#8b5cf6'];
+                const datasets = selectedAirYears.map((yr, idx) => {
+                    const yearData = fullYearMonths.map(mName => {
+                        const rec = ehsMasterData.lingkungan.find(i => i.aspek === 'Pemakaian Air' && i.bulan === mName && i.tahun === yr && (currentUnitFilter === 'ALL' || i.unit === currentUnitFilter));
+                        return rec ? rec.nilai : null;
+                    });
+                    return {
+                        label: `Tahun ${yr}`,
+                        data: yearData,
+                        borderColor: colors[idx % colors.length],
+                        backgroundColor: colors[idx % colors.length],
+                        tension: 0.2,
+                        fill: false
+                    };
+                });
+
+                datasets.push({
+                    label: 'Baku Mutu (1.5 m3)',
+                    data: new Array(12).fill(1.5),
+                    borderColor: '#ef4444',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                });
+
+                envSubChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'm3/ton TBS' } } }
+                    }
+                });
+            } else {
+                const chartConfigs = {
+                    air: { labels: fullYearMonths, data: [1.18, 1.22, 1.25, 1.20, 1.19, 1.24, 1.21, 1.18, 1.22, 1.20, 1.23, 1.19], label: 'Intensitas Air m3/Ton' },
+                    udara: { labels: fullYearMonths, data: [245, 230, 180, 195, 210, 220, 205, 190, 215, 200, 225, 210], label: 'Kadar Emisi mg/Nm3' },
+                    limbahb3: { labels: fullYearMonths, data: [0.8, 0.9, 1.1, 0.8, 1.0, 1.2, 0.9, 0.8, 1.1, 1.0, 0.9, 1.2], label: 'Volume Limbah B3 Ton' },
+                    gambut: { labels: fullYearMonths, data: [55, 52, 48, 50, 53, 56, 58, 54, 51, 49, 52, 55], label: 'TMAT cm' },
+                    limbahcair: { labels: fullYearMonths, data: [45.2, 44.1, 46.5, 43.8, 45.0, 47.2, 44.9, 45.5, 43.2, 46.0, 44.5, 45.1], label: 'Kadar BOD mg/L' }
+                };
+                const cfg = chartConfigs[subKey] || chartConfigs['air'];
+                envSubChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: cfg.labels,
+                        datasets: [{
+                            label: cfg.label,
+                            data: cfg.data,
+                            backgroundColor: '#16a34a',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+        };
+
+        window.updateModalFields = function() {
+            const modul = currentActiveTab;
+            const container = document.getElementById('dynamicFormFields');
+            const titleEl = document.getElementById('modalTitleText');
+            if(!container) return;
+
+            const moduleTitlesMap = {
+                k3: "Tambah Entri - K3",
+                lingkungan: currentEnvSubKey === 'airbaku' ? "Tambah Entri - Pemakaian Air" : "Tambah Entri - Lingkungan",
+                kebakaran: "Tambah Entri - Kebakaran",
+                perizinan: "Tambah Entri - Perizinan & Legalitas",
+                pelatihan: "Tambah Entri - Pelatihan & Sertifikat",
+                sertifikasi: "Tambah Entri - Sertifikasi",
+                schedule: "Tambah Entri - Agenda",
+                anggaran: "Tambah Entri - Anggaran & Realisasi",
+                capa: "Tambah Entri - CAPA",
+                laporan: "Tambah Entri - Laporan Instansi",
+                pengaturan: editingPengaturanIndex !== null ? "Edit Akun Pengguna" : "Tambah Pengguna Baru (NIK, Unit, Nama, Hak Akses)"
+            };
+
+            if (titleEl) {
+                titleEl.innerHTML = `<i class="fa-solid fa-circle-plus text-amber-400"></i> ${moduleTitlesMap[modul] || 'Tambah Entri'}`;
+            }
+
+            if (modul === 'pengaturan') {
+                container.innerHTML = `
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">NIK (Nomor Induk Karyawan)</label>
+                        <input type="text" id="mPengaturanNik" required class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Contoh: 198801012015">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="mPengaturanNama" required class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Nama lengkap karyawan...">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Hak Akses (Role)</label>
+                        <select id="mPengaturanRole" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 cursor-pointer">
+                            <option value="Admin">Admin</option>
+                            <option value="User">User</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                    </div>
+                `;
+            } else if (modul === 'k3') {
+                container.innerHTML = `
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Jenis Insiden</label>
+                        <select id="mK3Jenis" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 cursor-pointer">
+                            <option value="Near Miss">Near Miss</option>
+                            <option value="First Aid Injury">First Aid Injury</option>
+                            <option value="Lost Time Injury">Lost Time Injury (LTI)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Uraian Kejadian</label>
+                        <textarea id="mK3Uraian" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Keterangan insiden K3..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">PIC Penanggung Jawab</label>
+                        <input type="text" id="mK3Pic" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Nama PIC">
+                    </div>
+                `;
+            } else if (modul === 'lingkungan' && currentEnvSubKey === 'airbaku') {
+                const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let yearOptions = '';
+                for (let y = 2026; y >= 2000; y--) {
+                    yearOptions += `<option value="${y}">${y}</option>`;
+                }
+                container.innerHTML = `
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Bulan</label>
+                        <select id="mAirBulan" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 cursor-pointer">
+                            ${months.map(m => `<option value="${m}">${m}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tahun</label>
+                        <select id="mAirTahun" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 cursor-pointer">
+                            ${yearOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nilai (m3/ton TBS)</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" id="mAirNilai" class="w-full border border-slate-300 rounded-lg p-2.5 pr-28 font-medium bg-slate-50" placeholder="Contoh: 1.25">
+                            <span class="absolute right-3 top-2.5 text-xs font-bold text-slate-500">m3/ton TBS</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Baku Mutu</label>
+                        <input type="text" disabled value="< 1.5 m3" class="w-full border border-slate-200 rounded-lg p-2.5 font-semibold bg-slate-100 text-slate-600">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Status (Otomatis)</label>
+                        <input type="text" disabled value="Otomatis (Efisien jika < 1.5)" class="w-full border border-slate-200 rounded-lg p-2.5 italic bg-slate-100 text-slate-500 text-[11px]">
+                    </div>
+                `;
+            } else if (modul === 'schedule') {
+                const picOptions = (ehsMasterData.pengaturan || []).map(u => `<option value="${u.nama}">${u.nama} (${u.unit})</option>`).join('');
+                container.innerHTML = `
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Kegiatan</label>
+                        <input type="text" id="mSchedKegiatan" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Nama kegiatan agenda...">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">PIC Penanggung Jawab</label>
+                        <select id="mSchedPic" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 cursor-pointer">
+                            ${picOptions || '<option value="Admin EHS">Admin EHS</option>'}
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Start Date</label>
+                            <input type="date" id="mSchedStart" value="2026-03-01" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Due Date</label>
+                            <input type="date" id="mSchedDue" value="2026-03-05" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Status Progress</label>
+                        <select id="mSchedStatus" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50 cursor-pointer">
+                            <option value="Belum Mulai">Belum Mulai</option>
+                            <option value="Proses">Proses</option>
+                            <option value="Selesai">Selesai</option>
+                        </select>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Keterangan / Judul Data</label>
+                        <input type="text" id="mUraian" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Uraian entri data...">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Status / Nilai</label>
+                        <input type="text" id="mValue" class="w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50" placeholder="Aktif / Selesai / Standard">
+                    </div>
+                `;
+            }
+        };
+
+        window.handleFormSubmit = function(e) {
+            e.preventDefault();
+            const modul = currentActiveTab;
+            const unit = document.getElementById('modalUnitSelect').value;
+            const activeSubKeyBeforeSubmit = currentEnvSubKey;
+
+            if (modul === 'pengaturan') {
+                const nik = document.getElementById('mPengaturanNik').value;
+                const nama = document.getElementById('mPengaturanNama').value;
+                const hakAkses = document.getElementById('mPengaturanRole').value;
+
+                if (editingPengaturanIndex !== null) {
+                    // Update existing record
+                    ehsMasterData.pengaturan[editingPengaturanIndex].nik = nik;
+                    ehsMasterData.pengaturan[editingPengaturanIndex].unit = unit;
+                    ehsMasterData.pengaturan[editingPengaturanIndex].nama = nama;
+                    ehsMasterData.pengaturan[editingPengaturanIndex].hakAkses = hakAkses;
+                    editingPengaturanIndex = null;
+                } else {
+                    // Add new record
+                    ehsMasterData.pengaturan.push({
+                        id: "USR-0" + (ehsMasterData.pengaturan.length + 1),
+                        nik: nik,
+                        unit: unit,
+                        nama: nama,
+                        hakAkses: hakAkses
+                    });
+                }
+            } else if (modul === 'k3') {
+                const jenis = document.getElementById('mK3Jenis').value;
+                const uraian = document.getElementById('mK3Uraian').value;
+                const pic = document.getElementById('mK3Pic').value;
+
+                ehsMasterData.k3.push({
+                    id: "K3-0" + (ehsMasterData.k3.length + 1),
+                    unit: unit,
+                    tanggal: new Date().toISOString().split('T')[0],
+                    jenis: jenis,
+                    uraian: uraian,
+                    pic: pic,
+                    status: "Selesai",
+                    severity: "Low"
+                });
+            } else if (modul === 'lingkungan' && currentEnvSubKey === 'airbaku') {
+                const bulan = document.getElementById('mAirBulan').value;
+                const tahun = document.getElementById('mAirTahun').value;
+                const nilaiNum = parseFloat(document.getElementById('mAirNilai').value) || 0;
+                const status = nilaiNum < 1.5 ? "Efisien" : "Tidak Efisien";
+
+                ehsMasterData.lingkungan.push({
+                    id: "PROPER-W" + (ehsMasterData.lingkungan.length + 1),
+                    unit: unit,
+                    aspek: "Pemakaian Air",
+                    bulan: bulan,
+                    tahun: tahun,
+                    nilai: nilaiNum,
+                    bakuMutu: "< 1.5 m3",
+                    status: status
+                });
+            } else if (modul === 'schedule') {
+                const kegiatan = document.getElementById('mSchedKegiatan').value;
+                const pic = document.getElementById('mSchedPic').value;
+                const startDate = document.getElementById('mSchedStart').value;
+                const dueDate = document.getElementById('mSchedDue').value;
+                const status = document.getElementById('mSchedStatus').value;
+
+                ehsMasterData.schedule.push({
+                    id: "SCH-0" + (ehsMasterData.schedule.length + 1),
+                    unit: unit,
+                    kegiatan: kegiatan,
+                    pic: pic,
+                    startDate: startDate,
+                    dueDate: dueDate,
+                    status: status
+                });
+            } else {
+                const uraian = document.getElementById('mUraian').value;
+                const val = document.getElementById('mValue').value;
+
+                if (!ehsMasterData[modul]) ehsMasterData[modul] = [];
+                ehsMasterData[modul].push({
+                    id: modul.toUpperCase() + "-" + (ehsMasterData[modul].length + 1),
+                    unit: unit,
+                    uraian: uraian,
+                    status: val
+                });
+            }
+
+            closeAddModal();
+            
+            if (modul === 'lingkungan') {
+                switchEnvSubTab(activeSubKeyBeforeSubmit);
+            } else {
+                renderTabContentBody(currentActiveTab);
+            }
+
+            showToast("Tersimpan di SATRIA 360", "Data berhasil ditambahkan ke modul.");
+        };
+
+        window.initLeafletMap = function() {
+            const mapContainer = document.getElementById('hotspotMap');
+            if (!mapContainer) return;
+            if (leafletMapInstance) {
+                leafletMapInstance.remove();
+                leafletMapInstance = null;
+            }
+            if (mapContainer._leaflet_id) {
+                mapContainer._leaflet_id = null;
+            }
+
+            leafletMapInstance = L.map('hotspotMap').setView([2.5, 99.8], 9);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(leafletMapInstance);
+            L.circle([2.5, 99.8], { color: 'red', fillColor: '#f03', fillOpacity: 0.4, radius: 2500 }).addTo(leafletMapInstance).bindPopup("<b>Hotspot Active</b><br>Blok 42 Afdeling 3");
+        };
+
+        let budgetChartInstance = null;
+        let k3PieChartInstance = null;
+        window.initCharts = function() {
+            const budgetCtx = document.getElementById('budgetChart')?.getContext('2d');
+            if (budgetCtx) {
+                if (budgetChartInstance) budgetChartInstance.destroy();
+                budgetChartInstance = new Chart(budgetCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+                        datasets: [
+                            { label: 'Anggaran', data: [120, 125, 130, 125, 140, 135, 130, 145, 140, 150, 145, 160], backgroundColor: '#166534', borderRadius: 4 },
+                            { label: 'Realisasi', data: [95, 105, 110, 100, 120, 115, 110, 125, 120, 130, 125, 140], backgroundColor: '#22c55e', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            const k3PieCtx = document.getElementById('k3PieChart')?.getContext('2d');
+            if (k3PieCtx) {
+                if (k3PieChartInstance) k3PieChartInstance.destroy();
+                k3PieChartInstance = new Chart(k3PieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['K3', 'Lingkungan', 'Kebakaran', 'Sertifikasi'],
+                        datasets: [{
+                            data: [ehsMasterData.k3.length, ehsMasterData.lingkungan.length, ehsMasterData.kebakaran.length, ehsMasterData.sertifikasi.length],
+                            backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#8b5cf6']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }
+                    }
+                });
+            }
+        };
+
+        window.onload = function() {
+            switchTab('overview');
+        };
+    </script>
+<script>
+/* ===== SATRIA 360 - Lanjutan v2: skema modul, edit, validasi masa berlaku, penyimpanan lokal ===== */
+(function () {
+    const STORE_KEY = 'satria360_data_v2';
+    const persist = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(ehsMasterData)); } catch (e) {} };
+    try { const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (s) Object.keys(s).forEach(k => ehsMasterData[k] = s[k]); } catch (e) {}
+
+    const T = 'text', D = 'date', N = 'number';
+    const SCHEMA = {
+        perizinan:   { prefix: 'PER',  fields: [['dokumen','Nama Dokumen',T],['instansi','Instansi Penerbit',T],['noSk','Nomor SK',T],['masaBerlaku','Masa Berlaku',D]] },
+        pelatihan:   { prefix: 'TR',   fields: [['program','Program Pelatihan',T],['peserta','Peserta',T],['tanggal','Tanggal',T],['penyelenggara','Penyelenggara',T],['status','Status',['Terjadwal','Proses','Selesai']]] },
+        sertifikasi: { prefix: 'CERT', fields: [['standar','Standar',T],['lembaga','Lembaga Sertifikasi',T],['auditBerikutnya','Audit Berikutnya',T],['status','Status',['Valid','Akan Expired','Expired']]] },
+        anggaran:    { prefix: 'BDG',  fields: [['program','Program',T],['anggaran','Anggaran (Rp)',N],['realisasi','Realisasi (Rp)',N]] },
+        capa:        { prefix: 'CAPA', fields: [['temuan','Temuan',T],['akarMasalah','Akar Masalah',T],['tindakanKoreksi','Tindakan Koreksi',T],['dueDate','Batas Waktu',D],['status','Status',['Open','Proses','Closed']]] },
+        laporan:     { prefix: 'REP',  fields: [['kategori','Kategori',['K3','Lingkungan']],['namaPelaporan','Nama Laporan',T],['instansi','Instansi Tujuan',T],['periode','Periode',T],['statusPengiriman','Status Pengiriman',['Belum Dikirim','Terkirim Tepat Waktu','Terlambat','Diterima KLHK Online']]] },
+        kebakaran:   { prefix: 'HOT',  fields: [['hotspot','Lokasi Hotspot',T],['koordinat','Koordinat',T],['tingkatSiaga','Tingkat Siaga',['Siaga 1 (Kering)','Siaga 2 (Waspada)','Siaga 3 (Bahaya)']],['suhu','Suhu',T],['status','Status',['Patroli Rutin','Penanganan','Padam']]] }
+    };
+    let editingId = null;
+
+    const nextId = (prefix, arr) => prefix + '-' + String((arr || []).reduce((m, r) => Math.max(m, parseInt((String(r.id).match(/(\d+)$/) || [0, 0])[1], 10) || 0), 0) + 1).padStart(2, '0');
+    const rp = v => 'Rp ' + (Number(v) || 0).toLocaleString('id-ID');
+    const esc = s => String(s ?? '-').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const permitStatus = d => {
+        if (!d) return ['Tidak Ada Data', 'bg-slate-100 text-slate-700'];
+        const days = Math.ceil((new Date(d) - new Date()) / 864e5);
+        if (days < 0) return ['Kedaluwarsa', 'bg-red-100 text-red-800'];
+        if (days <= 180) return ['Segera Berakhir (' + days + ' hari)', 'bg-amber-100 text-amber-800'];
+        return ['Aktif', 'bg-emerald-100 text-emerald-800'];
+    };
+
+    function cell(modul, f, item) {
+        const k = f[0], v = item[k];
+        if (modul === 'perizinan' && k === 'masaBerlaku') { const [t, c] = permitStatus(v); return esc(v) + ` <span class="${c} px-2 py-0.5 rounded font-bold text-[10px] whitespace-nowrap">${t}</span>`; }
+        if (k === 'anggaran' || k === 'realisasi') return rp(v);
+        if (Array.isArray(f[2])) return `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold text-[10px] whitespace-nowrap">${esc(v)}</span>`;
+        return esc(v);
+    }
+
+    const origModule = window.generateModuleHTML;
+    window.generateModuleHTML = function (modul) {
+        const sc = SCHEMA[modul];
+        if (!sc || modul === 'kebakaran') return origModule(modul);
+        const titles = { perizinan: 'Perizinan & Legalitas', pelatihan: 'Pelatihan & Sertifikat', sertifikasi: 'Sertifikasi', anggaran: 'Anggaran & Realisasi', capa: 'CAPA (Koreksi)', laporan: 'Laporan Instansi' };
+        const data = (ehsMasterData[modul] || []).filter(i => filterRecordByUnitAndSearch(i));
+        let extra = '';
+        if (modul === 'anggaran') {
+            const a = data.reduce((s, r) => s + (Number(r.anggaran) || 0), 0), r = data.reduce((s, x) => s + (Number(x.realisasi) || 0), 0);
+            extra = `<div class="grid grid-cols-3 gap-3 text-xs">${[['Total Anggaran', rp(a)], ['Total Realisasi', rp(r)], ['Serapan', a ? Math.round(r / a * 100) + '%' : '0%']].map(x => `<div class="bg-white p-3 rounded-xl border border-slate-200"><div class="text-slate-500">${x[0]}</div><div class="font-extrabold text-slate-900 text-sm">${x[1]}</div></div>`).join('')}</div>`;
+        }
+        if (modul === 'perizinan') {
+            const n = data.filter(r => permitStatus(r.masaBerlaku)[0] !== 'Aktif').length;
+            if (n) extra = `<div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-xs font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${n} dokumen perlu perpanjangan atau sudah kedaluwarsa.</div>`;
+        }
+        const head = ['ID', 'Unit', ...sc.fields.map(f => f[1]), ...(modul === 'anggaran' ? ['Serapan'] : []), 'Aksi'].map(h => `<th class="px-3 py-2.5">${h}</th>`).join('');
+        const rows = data.length ? data.map(it => `<tr class="hover:bg-slate-50"><td class="px-3 py-2.5 font-bold text-ehs-800 whitespace-nowrap">${esc(it.id)}</td><td class="px-3 py-2.5 font-semibold">${esc(it.unit)}</td>${sc.fields.map(f => `<td class="px-3 py-2.5">${cell(modul, f, it)}</td>`).join('')}${modul === 'anggaran' ? (p => `<td class="px-3 py-2.5 min-w-[90px]"><div class="h-2 bg-slate-200 rounded"><div class="h-2 rounded ${p > 100 ? 'bg-red-500' : 'bg-ehs-600'}" style="width:${Math.min(p, 100)}%"></div></div><span class="text-[10px] font-bold">${p}%</span></td>`)(it.anggaran ? Math.round(it.realisasi / it.anggaran * 100) : 0) : ''}<td class="px-3 py-2.5 text-center whitespace-nowrap space-x-2"><button onclick="editSchemaRecord('${modul}','${it.id}')" class="text-blue-500 hover:text-blue-700 cursor-pointer" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteRecord('${modul}', ${getDataIndexGeneric(modul, it)})" class="text-red-500 hover:text-red-700 cursor-pointer" title="Hapus"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('') : `<tr><td colspan="${sc.fields.length + 3}" class="p-6 text-center text-slate-400">Tidak ada data.</td></tr>`;
+        return `<div class="space-y-4 pb-16"><div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><h2 class="text-lg sm:text-xl font-bold text-slate-900">${titles[modul]}</h2></div>${extra}<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"><div class="p-3 bg-slate-50 border-b flex flex-col sm:flex-row justify-between gap-2"><span class="font-bold text-xs text-slate-700 uppercase">Tabel ${titles[modul]}</span><div class="relative w-full sm:w-64"><i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i><input type="text" oninput="handleTableSearch(event)" value="${esc(tableSearchQuery) === '-' ? '' : esc(tableSearchQuery)}" placeholder="Cari di tabel..." class="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ehs-600"></div></div><div class="overflow-x-auto custom-scrollbar"><table class="fit-table text-left text-xs text-slate-700 min-w-[700px]"><thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b text-[11px]"><tr>${head}</tr></thead><tbody class="divide-y divide-slate-200">${rows}</tbody></table></div></div></div>`;
+    };
+
+    const origFields = window.updateModalFields;
+    window.updateModalFields = function () {
+        const modul = currentActiveTab, sc = SCHEMA[modul];
+        if (!sc) return origFields();
+        const rec = editingId ? (ehsMasterData[modul] || []).find(r => r.id === editingId) : null;
+        document.getElementById('modalTitleText').innerHTML = `<i class="fa-solid fa-circle-plus text-amber-400"></i> ${rec ? 'Edit' : 'Tambah'} Entri - ${modul.toUpperCase()}`;
+        if (rec) document.getElementById('modalUnitSelect').value = rec.unit;
+        document.getElementById('dynamicFormFields').innerHTML = sc.fields.map(f => {
+            const v = rec ? (rec[f[0]] ?? '') : '', c = 'w-full border border-slate-300 rounded-lg p-2.5 font-medium bg-slate-50';
+            const input = Array.isArray(f[2]) ? `<select id="sf_${f[0]}" class="${c}">${f[2].map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>` : `<input id="sf_${f[0]}" type="${f[2]}" ${f[2] === N ? 'min="0"' : ''} required value="${esc(v) === '-' ? '' : esc(v)}" class="${c}">`;
+            return `<div><label class="block font-semibold text-slate-700 mb-1">${f[1]}</label>${input}</div>`;
+        }).join('');
+    };
+
+    window.editSchemaRecord = function (modul, id) {
+        editingId = id;
+        document.getElementById('dataModal').classList.remove('hidden');
+        updateModalFields();
+    };
+    const origOpen = window.openAddModal, origClose = window.closeAddModal;
+    window.openAddModal = function () { editingId = null; origOpen(); };
+    window.closeAddModal = function () { editingId = null; origClose(); };
+
+    const origSubmit = window.handleFormSubmit;
+    window.handleFormSubmit = function (e) {
+        const modul = currentActiveTab, sc = SCHEMA[modul];
+        if (!sc) { origSubmit(e); persist(); return; }
+        e.preventDefault();
+        const unit = document.getElementById('modalUnitSelect').value, vals = {};
+        sc.fields.forEach(f => { const v = document.getElementById('sf_' + f[0]).value; vals[f[0]] = f[2] === N ? (parseFloat(v) || 0) : v; });
+        if (modul === 'anggaran') vals.persen = vals.anggaran ? Math.round(vals.realisasi / vals.anggaran * 100) : 0;
+        if (modul === 'perizinan') vals.status = permitStatus(vals.masaBerlaku)[0].split(' (')[0];
+        if (!ehsMasterData[modul]) ehsMasterData[modul] = [];
+        const rec = editingId && ehsMasterData[modul].find(r => r.id === editingId);
+        if (rec) Object.assign(rec, { unit }, vals); else ehsMasterData[modul].push({ id: nextId(sc.prefix, ehsMasterData[modul]), unit, ...vals });
+        const edited = !!rec;
+        closeAddModal(); persist();
+        renderTabContentBody(modul);
+        showToast('Tersimpan di SATRIA 360', edited ? 'Data berhasil diperbarui.' : 'Data berhasil ditambahkan ke modul.');
+    };
+
+    ['deleteRecord', 'deletePengaturanRecord', 'deleteAirRecord'].forEach(n => { const o = window[n]; window[n] = function () { const r = o.apply(this, arguments); persist(); return r; }; });
+    window.saveProjectToCloud = function () { persist(); showToast('SATRIA 360 Tersimpan', 'Data tersimpan di peramban perangkat ini.'); };
+    window.resetSatriaData = function () { try { localStorage.removeItem(STORE_KEY); } catch (e) {} location.reload(); };
+})();
+</script>
+<script>
+/* ===== Backup & Pulihkan data (file JSON) ===== */
+(function () {
+    const KEY = 'satria360_data_v2';
+    window.backupSatriaData = function () {
+        const blob = new Blob([JSON.stringify({ app: 'SATRIA360', version: 2, savedAt: new Date().toISOString(), data: ehsMasterData }, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'satria360-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        showToast('Backup Dibuat', 'File cadangan data diunduh. Simpan di tempat aman.');
+    };
+    window.restoreSatriaData = function (input) {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+            try {
+                const j = JSON.parse(r.result), d = j.data || j;
+                if (!d || typeof d !== 'object' || !Array.isArray(d.k3)) throw new Error('format');
+                Object.keys(d).forEach(k => ehsMasterData[k] = d[k]);
+                try { localStorage.setItem(KEY, JSON.stringify(ehsMasterData)); } catch (e) {}
+                switchTab(currentActiveTab);
+                showToast('Data Dipulihkan', 'Data dari file cadangan berhasil dimuat.');
+            } catch (e) { showToast('Gagal Memulihkan', 'File bukan cadangan SATRIA 360 yang valid.'); }
+            input.value = '';
+        };
+        r.readAsText(f);
+    };
+    const ref = document.querySelector('header button[onclick="exportToExcel()"]');
+    if (ref) {
+        const mk = (html, cls, fn, title) => { const b = document.createElement('button'); b.className = cls; b.title = title; b.innerHTML = html; b.onclick = fn; return b; };
+        const cls = 'bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer';
+        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.className = 'hidden'; inp.onchange = () => restoreSatriaData(inp);
+        ref.after(mk('<i class="fa-solid fa-download"></i>', cls, backupSatriaData, 'Backup data (JSON)'), mk('<i class="fa-solid fa-upload"></i>', cls, () => inp.click(), 'Pulihkan dari file backup'), inp);
+    }
+})();
+</script>
+<script>
+/* ===== Lanjutan v3: peta hotspot & grafik anggaran berbasis data ===== */
+(function () {
+    const esc = s => String(s ?? '-').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const inUnit = r => currentUnitFilter === 'ALL' || r.unit === currentUnitFilter;
+
+    function parseCoord(s) {
+        const m = String(s || '').match(/(-?\d+(?:\.\d+)?)\s*°?\s*([NSns])?[\s,;]+(-?\d+(?:\.\d+)?)\s*°?\s*([EWew])?/);
+        if (!m) return null;
+        let lat = parseFloat(m[1]), lon = parseFloat(m[3]);
+        if (m[2] && /s/i.test(m[2])) lat = -Math.abs(lat);
+        if (m[4] && /w/i.test(m[4])) lon = -Math.abs(lon);
+        return (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) ? [lat, lon] : null;
+    }
+    const siagaColor = r => r.status === 'Padam' ? '#64748b' : /3/.test(r.tingkatSiaga) ? '#dc2626' : /2/.test(r.tingkatSiaga) ? '#ea580c' : '#f59e0b';
+
+    window.initLeafletMap = function () {
+        const el = document.getElementById('hotspotMap');
+        if (!el) return;
+        if (leafletMapInstance) { leafletMapInstance.remove(); leafletMapInstance = null; }
+        if (el._leaflet_id) el._leaflet_id = null;
+        leafletMapInstance = L.map('hotspotMap').setView([2.5, 99.8], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(leafletMapInstance);
+        const pts = [];
+        (ehsMasterData.kebakaran || []).filter(inUnit).forEach(r => {
+            const c = parseCoord(r.koordinat);
+            if (!c) return;
+            pts.push(c);
+            L.circle(c, { color: siagaColor(r), fillColor: siagaColor(r), fillOpacity: 0.4, radius: 2500 }).addTo(leafletMapInstance)
+                .bindPopup(`<b>${esc(r.hotspot)}</b><br>${esc(r.unit)}<br>${esc(r.tingkatSiaga)} · ${esc(r.suhu)}<br>Status: ${esc(r.status)}`);
+        });
+        if (pts.length === 1) leafletMapInstance.setView(pts[0], 12);
+        else if (pts.length > 1) leafletMapInstance.fitBounds(pts, { padding: [40, 40], maxZoom: 12 });
+    };
+
+    // Tombol edit + indeks hapus yang benar saat tabel Kebakaran sedang difilter/dicari
+    const origKeb = window.generateKebakaranHTML;
+    window.generateKebakaranHTML = function () {
+        const rows = (ehsMasterData.kebakaran || []).filter(i => filterRecordByUnitAndSearch(i));
+        let k = 0;
+        return origKeb().replace(/<button onclick="deleteRecord\('kebakaran', \d+\)"/g, () => {
+            const r = rows[k++]; if (!r) return '<button';
+            return `<button onclick="editSchemaRecord('kebakaran','${r.id}')" class="text-blue-500 hover:text-blue-700 cursor-pointer mr-2" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteRecord('kebakaran', ${ehsMasterData.kebakaran.indexOf(r)})"`;
+        });
+    };
+
+    const origCharts = window.initCharts;
+    window.initCharts = function () {
+        origCharts();
+        const cv = document.getElementById('budgetChart');
+        if (!cv) return;
+        const d = (ehsMasterData.anggaran || []).filter(inUnit), jt = v => Math.round((Number(v) || 0) / 1e5) / 10;
+        const h = cv.closest('.bg-white') && cv.closest('.bg-white').querySelector('h4');
+        if (h) h.textContent = 'Anggaran vs Realisasi per Program';
+        if (budgetChartInstance) budgetChartInstance.destroy();
+        budgetChartInstance = new Chart(cv.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: d.map(r => String(r.program).length > 24 ? String(r.program).slice(0, 23) + '…' : r.program),
+                datasets: [
+                    { label: 'Anggaran', data: d.map(r => jt(r.anggaran)), backgroundColor: '#166534', borderRadius: 4 },
+                    { label: 'Realisasi', data: d.map(r => jt(r.realisasi)), backgroundColor: '#22c55e', borderRadius: 4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }, scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 9 } } } } }
+        });
+    };
+})();
+</script>
+</body>
+</html>

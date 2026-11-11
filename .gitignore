@@ -1,0 +1,5 @@
+# Backup data & file sistem
+satria360-backup-*.json
+.DS_Store
+Thumbs.db
+*.log
